@@ -1,7 +1,6 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import sqlite3
-import hashlib
 
 class GestionProductos:
     def __init__(self, root, user_type):
@@ -33,53 +32,62 @@ class GestionProductos:
     def setup_product_frame(self):
         self.product_frame.grid_columnconfigure(0, weight=1)
         self.product_frame.grid_columnconfigure(1, weight=3)
-        for i in range(9):
+        for i in range(10):
             self.product_frame.grid_rowconfigure(i, weight=1)
 
-        ttk.Label(self.product_frame, text="Producto:", font=("Helvetica", 14)).grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(self.product_frame, text="Código de Barras:", font=("Helvetica", 14)).grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.barcode_entry = ttk.Entry(self.product_frame, font=("Helvetica", 14))
+        self.barcode_entry.grid(row=0, column=1, padx=10, pady=5, sticky="we")
+        self.barcode_entry.bind("<Return>", self.leer_codigo_barras)
+
+        ttk.Label(self.product_frame, text="Producto:", font=("Helvetica", 14)).grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.product_entry = ttk.Entry(self.product_frame, font=("Helvetica", 14))
-        self.product_entry.grid(row=0, column=1, padx=10, pady=5, sticky="we")
+        self.product_entry.grid(row=1, column=1, padx=10, pady=5, sticky="we")
 
-        ttk.Label(self.product_frame, text="Cantidad:", font=("Helvetica", 14)).grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(self.product_frame, text="Cantidad:", font=("Helvetica", 14)).grid(row=2, column=0, padx=10, pady=5, sticky="w")
         self.quantity_entry = ttk.Entry(self.product_frame, font=("Helvetica", 14))
-        self.quantity_entry.grid(row=1, column=1, padx=10, pady=5, sticky="we")
+        self.quantity_entry.grid(row=2, column=1, padx=10, pady=5, sticky="we")
 
-        ttk.Label(self.product_frame, text="Precio:", font=("Helvetica", 14)).grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(self.product_frame, text="Precio:", font=("Helvetica", 14)).grid(row=3, column=0, padx=10, pady=5, sticky="w")
         self.price_entry = ttk.Entry(self.product_frame, font=("Helvetica", 14))
-        self.price_entry.grid(row=2, column=1, padx=10, pady=5, sticky="we")
+        self.price_entry.grid(row=3, column=1, padx=10, pady=5, sticky="we")
 
         self.add_button = ttk.Button(self.product_frame, text="Agregar Producto", command=self.agregar_producto, style="TButton")
-        self.add_button.grid(row=3, column=0, columnspan=2, pady=10, sticky="we")
+        self.add_button.grid(row=4, column=0, columnspan=2, pady=10, sticky="we")
 
         if self.user_type == "admin":
             self.update_button = ttk.Button(self.product_frame, text="Actualizar Producto", command=self.actualizar_producto, style="TButton")
-            self.update_button.grid(row=4, column=0, columnspan=2, pady=10, sticky="we")
+            self.update_button.grid(row=5, column=0, columnspan=2, pady=10, sticky="we")
 
             self.delete_button = ttk.Button(self.product_frame, text="Eliminar Producto", command=self.eliminar_producto, style="TButton")
-            self.delete_button.grid(row=5, column=0, columnspan=2, pady=10, sticky="we")
+            self.delete_button.grid(row=6, column=0, columnspan=2, pady=10, sticky="we")
 
             self.config_button = ttk.Button(self.product_frame, text="Ir a Configuración", command=self.ir_a_configuracion, style="TButton")
-            self.config_button.grid(row=8, column=0, columnspan=2, pady=10, sticky="we")
+            self.config_button.grid(row=9, column=0, columnspan=2, pady=10, sticky="we")
 
         self.tree = ttk.Treeview(self.product_frame, columns=("Producto", "Cantidad", "Precio"), show="headings")
         self.tree.heading("Producto", text="Producto")
         self.tree.heading("Cantidad", text="Cantidad")
         self.tree.heading("Precio", text="Precio")
-        self.tree.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="we")
+        self.tree.grid(row=7, column=0, columnspan=2, padx=10, pady=10, sticky="we")
 
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
 
         if self.user_type != "admin":
             self.register_button = ttk.Button(self.product_frame, text="Ir a Caja Registradora", command=self.ir_a_caja_registradora, style="TButton")
-            self.register_button.grid(row=7, column=0, columnspan=2, pady=10, sticky="we")
+            self.register_button.grid(row=8, column=0, columnspan=2, pady=10, sticky="we")
 
         self.cargar_productos()
+
+        self.status_label = ttk.Label(self.product_frame, text="", font=("Helvetica", 12), background="#f0f0f0")
+        self.status_label.grid(row=10, column=0, columnspan=2, pady=10, sticky="we")
 
     def create_tables(self):
         cursor = self.conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS productos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo_barras TEXT UNIQUE,
                 nombre TEXT NOT NULL,
                 cantidad INTEGER NOT NULL,
                 precio REAL NOT NULL
@@ -92,9 +100,10 @@ class GestionProductos:
         cursor.execute("SELECT * FROM productos")
         productos = cursor.fetchall()
         for producto in productos:
-            self.tree.insert("", tk.END, values=(producto[1], producto[2], producto[3]))
+            self.tree.insert("", tk.END, values=(producto[2], producto[3], producto[4]))
 
     def agregar_producto(self):
+        codigo_barras = self.barcode_entry.get()
         producto = self.product_entry.get()
         cantidad = self.quantity_entry.get()
         precio = self.price_entry.get()
@@ -104,23 +113,26 @@ class GestionProductos:
                 cantidad = int(cantidad)
                 precio = float(precio)
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO productos (nombre, cantidad, precio) VALUES (?, ?, ?)", (producto, cantidad, precio))
+                cursor.execute("INSERT INTO productos (codigo_barras, nombre, cantidad, precio) VALUES (?, ?, ?, ?)", (codigo_barras, producto, cantidad, precio))
                 self.conn.commit()
                 self.tree.insert("", tk.END, values=(producto, cantidad, precio))
                 self.limpiar_entradas()
+                self.status_label.config(text="Producto agregado exitosamente", foreground="green")
             except ValueError:
-                messagebox.showerror("Error", "Cantidad y precio deben ser números.")
+                self.status_label.config(text="Cantidad y precio deben ser números", foreground="red")
+            except sqlite3.IntegrityError:
+                self.status_label.config(text="Código de barras ya existe", foreground="red")
         else:
-            messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
+            self.status_label.config(text="Todos los campos son obligatorios", foreground="red")
 
     def actualizar_producto(self):
         if self.user_type != "admin":
-            messagebox.showwarning("Advertencia", "No tienes permisos para actualizar productos.")
+            self.status_label.config(text="No tienes permisos para actualizar productos", foreground="red")
             return
 
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showwarning("Advertencia", "Selecciona un producto para actualizar.")
+            self.status_label.config(text="Selecciona un producto para actualizar", foreground="red")
             return
 
         producto = self.product_entry.get()
@@ -137,19 +149,20 @@ class GestionProductos:
                 self.conn.commit()
                 self.tree.item(selected_item, values=(producto, cantidad, precio))
                 self.limpiar_entradas()
+                self.status_label.config(text="Producto actualizado exitosamente", foreground="green")
             except ValueError:
-                messagebox.showerror("Error", "Cantidad y precio deben ser números.")
+                self.status_label.config(text="Cantidad y precio deben ser números", foreground="red")
         else:
-            messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
+            self.status_label.config(text="Todos los campos son obligatorios", foreground="red")
 
     def eliminar_producto(self):
         if self.user_type != "admin":
-            messagebox.showwarning("Advertencia", "No tienes permisos para eliminar productos.")
+            self.status_label.config(text="No tienes permisos para eliminar productos", foreground="red")
             return
 
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showwarning("Advertencia", "Selecciona un producto para eliminar.")
+            self.status_label.config(text="Selecciona un producto para eliminar", foreground="red")
             return
 
         index = self.tree.index(selected_item)
@@ -158,8 +171,10 @@ class GestionProductos:
         self.conn.commit()
         self.tree.delete(selected_item)
         self.limpiar_entradas()
+        self.status_label.config(text="Producto eliminado exitosamente", foreground="green")
 
     def limpiar_entradas(self):
+        self.barcode_entry.delete(0, tk.END)
         self.product_entry.delete(0, tk.END)
         self.quantity_entry.delete(0, tk.END)
         self.price_entry.delete(0, tk.END)
@@ -176,6 +191,25 @@ class GestionProductos:
             self.price_entry.delete(0, tk.END)
             self.price_entry.insert(0, values[2])
 
+    def leer_codigo_barras(self, event):
+        codigo_barras = self.barcode_entry.get()
+        if codigo_barras:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM productos WHERE codigo_barras=?", (codigo_barras,))
+            producto = cursor.fetchone()
+            if producto:
+                self.product_entry.delete(0, tk.END)
+                self.product_entry.insert(0, producto[2])
+                self.quantity_entry.delete(0, tk.END)
+                self.quantity_entry.insert(0, producto[3])
+                self.price_entry.delete(0, tk.END)
+                self.price_entry.insert(0, producto[4])
+                self.status_label.config(text="Producto encontrado", foreground="green")
+            else:
+                self.status_label.config(text="Producto no encontrado", foreground="red")
+        else:
+            self.status_label.config(text="Ingrese un código de barras", foreground="red")
+
     def ir_a_caja_registradora(self):
         self.root.destroy()
         from caja_registradora import CajaRegistradora
@@ -185,7 +219,7 @@ class GestionProductos:
 
     def ir_a_configuracion(self):
         if self.user_type != "admin":
-            messagebox.showwarning("Advertencia", "No tienes permisos para acceder a la configuración.")
+            self.status_label.config(text="No tienes permisos para acceder a la configuración", foreground="red")
             return
 
         self.root.destroy()

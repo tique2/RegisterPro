@@ -37,36 +37,41 @@ class CajaRegistradora:
         for i in range(10):
             self.register_frame.grid_rowconfigure(i, weight=1)
 
-        ttk.Label(self.register_frame, text="Producto:", font=("Helvetica", 14)).grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        self.product_entry = ttk.Entry(self.register_frame, font=("Helvetica", 14))
-        self.product_entry.grid(row=0, column=1, padx=10, pady=5, sticky="we")
+        ttk.Label(self.register_frame, text="Código de Barras:", font=("Helvetica", 14)).grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.barcode_entry = ttk.Entry(self.register_frame, font=("Helvetica", 14))
+        self.barcode_entry.grid(row=0, column=1, padx=10, pady=5, sticky="we")
+        self.barcode_entry.bind("<Return>", self.leer_codigo_barras)
 
-        ttk.Label(self.register_frame, text="Cantidad:", font=("Helvetica", 14)).grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(self.register_frame, text="Producto:", font=("Helvetica", 14)).grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        self.product_entry = ttk.Entry(self.register_frame, font=("Helvetica", 14))
+        self.product_entry.grid(row=1, column=1, padx=10, pady=5, sticky="we")
+
+        ttk.Label(self.register_frame, text="Cantidad:", font=("Helvetica", 14)).grid(row=2, column=0, padx=10, pady=5, sticky="w")
         self.quantity_entry = ttk.Entry(self.register_frame, font=("Helvetica", 14))
-        self.quantity_entry.grid(row=1, column=1, padx=10, pady=5, sticky="we")
+        self.quantity_entry.grid(row=2, column=1, padx=10, pady=5, sticky="we")
 
         self.add_button = ttk.Button(self.register_frame, text="Agregar Producto", command=self.agregar_producto, style="TButton")
-        self.add_button.grid(row=2, column=0, columnspan=2, pady=10, sticky="we")
+        self.add_button.grid(row=3, column=0, columnspan=2, pady=10, sticky="we")
 
         self.tree = ttk.Treeview(self.register_frame, columns=("Producto", "Cantidad", "Precio", "Total"), show="headings")
         self.tree.heading("Producto", text="Producto")
         self.tree.heading("Cantidad", text="Cantidad")
         self.tree.heading("Precio", text="Precio")
         self.tree.heading("Total", text="Total")
-        self.tree.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="we")
+        self.tree.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="we")
 
         self.total_label = ttk.Label(self.register_frame, text="Total General: $0.00", font=("Helvetica", 14, "bold"))
-        self.total_label.grid(row=4, column=0, columnspan=2, pady=10, sticky="we")
+        self.total_label.grid(row=5, column=0, columnspan=2, pady=10, sticky="we")
 
-        ttk.Label(self.register_frame, text="Pago del Cliente:", font=("Helvetica", 14)).grid(row=5, column=0, padx=10, pady=5, sticky="w")
+        ttk.Label(self.register_frame, text="Pago del Cliente:", font=("Helvetica", 14)).grid(row=6, column=0, padx=10, pady=5, sticky="w")
         self.payment_entry = ttk.Entry(self.register_frame, font=("Helvetica", 14))
-        self.payment_entry.grid(row=5, column=1, padx=10, pady=5, sticky="we")
+        self.payment_entry.grid(row=6, column=1, padx=10, pady=5, sticky="we")
 
         self.bill_button = ttk.Button(self.register_frame, text="Generar Factura", command=self.generar_factura, style="TButton")
-        self.bill_button.grid(row=6, column=0, columnspan=2, pady=10, sticky="we")
+        self.bill_button.grid(row=7, column=0, columnspan=2, pady=10, sticky="we")
 
         self.print_button = ttk.Button(self.register_frame, text="Imprimir Factura", command=self.imprimir_factura, style="TButton")
-        self.print_button.grid(row=7, column=0, columnspan=2, pady=10, sticky="we")
+        self.print_button.grid(row=8, column=0, columnspan=2, pady=10, sticky="we")
 
         if self.user_type == "admin":
             self.config_button = ttk.Button(self.register_frame, text="Ir a Configuración", command=self.ir_a_configuracion, style="TButton")
@@ -110,6 +115,7 @@ class CajaRegistradora:
             messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
 
     def limpiar_entradas(self):
+        self.barcode_entry.delete(0, tk.END)
         self.product_entry.delete(0, tk.END)
         self.quantity_entry.delete(0, tk.END)
 
@@ -214,6 +220,23 @@ class CajaRegistradora:
         config_root = tk.Tk()
         ConfiguracionEmpresa(config_root)
         config_root.mainloop()
+
+    def leer_codigo_barras(self, event):
+        codigo_barras = self.barcode_entry.get()
+        if codigo_barras:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM productos WHERE codigo_barras=?", (codigo_barras,))
+            producto = cursor.fetchone()
+            if producto:
+                self.product_entry.delete(0, tk.END)
+                self.product_entry.insert(0, producto[2])
+                self.quantity_entry.delete(0, tk.END)
+                self.quantity_entry.insert(0, "1")  # Asumimos que se agrega una unidad por defecto
+                self.status_label.config(text="Producto encontrado", foreground="green")
+            else:
+                self.status_label.config(text="Producto no encontrado", foreground="red")
+        else:
+            self.status_label.config(text="Ingrese un código de barras", foreground="red")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -122,8 +122,6 @@ class LoginRegistro:
             if user:
                 hashed_password = hashlib.sha256(contrasena.encode()).hexdigest()
                 if hashed_password == user[2]:
-                    messagebox.showinfo("Éxito", "Inicio de sesión exitoso.")
-                    self.root.destroy()
                     self.open_product_manager(user[3])
                 else:
                     messagebox.showerror("Error", "Contraseña incorrecta.")
@@ -151,7 +149,6 @@ class LoginRegistro:
                 cursor.execute("INSERT INTO usuarios (usuario, contrasena, tipo) VALUES (?, ?, ?)", (usuario, hashed_password, tipo))
                 self.conn.commit()
                 messagebox.showinfo("Éxito", "Registro exitoso.")
-                self.root.destroy()
                 self.open_product_manager(tipo)
             except sqlite3.IntegrityError:
                 messagebox.showerror("Error", "El usuario ya existe.")
@@ -182,6 +179,7 @@ class LoginRegistro:
             messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
 
     def open_product_manager(self, user_type):
+        self.root.destroy()
         if user_type == "admin":
             from productos import GestionProductos
             product_manager_root = tk.Tk()

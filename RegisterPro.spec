@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['loginregistro.py'],
+    ['RegisterPro.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='loginregistro',
+    name='RegisterPro',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

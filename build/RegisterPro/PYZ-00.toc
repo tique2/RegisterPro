@@ -1,4 +1,4 @@
-('/home/princesitasofia/Documentos/RegisterPro/build/loginregistro/PYZ-00.pyz',
+('/home/princesitasofia/Documentos/RegisterPro/build/RegisterPro/PYZ-00.pyz',
  [('_compat_pickle', '/usr/lib/python3.11/_compat_pickle.py', 'PYMODULE'),
   ('_compression', '/usr/lib/python3.11/_compression.py', 'PYMODULE'),
   ('_py_abc', '/usr/lib/python3.11/_py_abc.py', 'PYMODULE'),
